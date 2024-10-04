@@ -14,7 +14,7 @@ I'm publishing them here to show off my script writing ability to others who may
 
 - I have a home lab consisting of several devices with Linux installed, a PC acting as a router among those devices. You'll see more than a few scripts related to networking management.
 
-- None of these will be examples of perfect programming or scripting practices, but if I've pushed something here, it got the job done
+- None of these will be examples of perfect programming or scripting practices, but if I've pushed something here, it got the job done.
 
 ## AI
 
