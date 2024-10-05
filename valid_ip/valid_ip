@@ -1,0 +1,117 @@
+is_ipv4_valid(){
+# returns 1 if ipv4 on $1 is invalid, 0 if valid
+# also puts values of octets in array @IPV4_OCTET
+
+ local CURRENT_OCTET=1
+ local NUMBERS_SEEN_IN_THIS_CURRENT_OCTET=0
+ local WAS_LAST_CHARACTER_NON_NUMERIC=0
+ local OCTET_STRING_BUFFER=''
+
+ # Setting this so if first character is non-numberic, it fails
+ WAS_LAST_CHARACTER_NON_NUMERIC=1 
+ 
+ for (( i=0; i<${#1}; i++ )); do
+
+  if [[ ${1:$i:1} =~ [0-9] ]]; then
+   WAS_LAST_CHARACTER_NON_NUMERIC=0
+   (( NUMBERS_SEEN_IN_THIS_CURRENT_OCTET++ ))
+   if (( NUMBERS_SEEN_IN_THIS_CURRENT_OCTET > 3 )); then
+    # maximum 3 numbers per octet
+    return 1
+    fi
+   OCTET_STRING_BUFFER="$OCTET_STRING_BUFFER${1:$i:1}"
+   continue
+   fi
+
+  if [[ ${1:$i:1} == "." ]]; then
+   if (( WAS_LAST_CHARACTER_NON_NUMERIC==1 )); then
+    # maximum 1 dot between numbers
+    return 1
+   else 
+    NUMBERS_SEEN_IN_THIS_CURRENT_OCTET=0
+    WAS_LAST_CHARACTER_NON_NUMERIC=1
+    # octet > 255 is invalid
+    if (( OCTET_STRING_BUFFER > 255 )); then
+     return 1 
+    else
+     IPV4_OCTET[$CURRENT_OCTET]=$OCTET_STRING_BUFFER
+     OCTET_STRING_BUFFER=''
+     (( CURRENT_OCTET++ ))
+     if (( CURRENT_OCTET==5 )); then
+      # IPv4 has 4 octets, not 5
+      return 1
+      fi
+     fi
+    continue
+    fi
+
+   # any other character is valid
+   return 1
+   fi
+
+ done
+
+ if (( CURRENT_OCTET!=4 )); then
+  # IPv4 has 4 octets, not less than 4
+  return 1
+  fi
+
+ # octet > 255 is invalid
+ if (( OCTET_STRING_BUFFER > 255 )); then
+  return 1 
+  fi
+
+ IPV4_OCTET[$CURRENT_OCTET]=$OCTET_STRING_BUFFER
+ return 0
+}
+
+is_ipv4_nonroutable(){
+# Determines if ipv4 is a non-routable address or not
+# If supplied IPv4 is invalid, it returns 127
+# Non-routable: 1, Routable: 0
+# Sets IPV4_TYPE with additional information about the IP
+ is_ipv4_valid "$1" 
+ if [[ "$?" != "0" ]]; then return 127; fi
+ if (( IPV4_OCTET[1]==0 && IPV4_OCTET[2]==0 && IPV4_OCTET[3]==0 && IPV4_OCTET[4]==0 )); then
+  IPV4_TYPE="zero"
+  return 1
+  fi 
+ if (( IPV4_OCTET[1]==255 && IPV4_OCTET[2]==255 && IPV4_OCTET[3]==255 && IPV4_OCTET[4]==255 )); then
+  IPV4_TYPE="all-ones"
+  return 1
+  fi
+ if (( IPV4_OCTET[1]==10 )); then
+  IPV4_TYPE="private"
+  return 1
+  fi
+ if (( IPV4_OCTET[1]==127 && IPV4_OCTET[2]==0 )); then
+  IPV4_TYPE="localhost"
+  return 1
+  fi
+ if (( IPV4_OCTET[1]==192 && IPV4_OCTET[2]==168 )); then
+  IPV4_TYPE="private"
+  return 1
+  fi
+ if (( IPV4_OCTET[1]==172 && ( IPV4_OCTET[2]>=16  &&  IPV4_OCTET[2]<=31 ) )); then
+  IPV4_TYPE="private"
+  return 1
+  fi
+ IPV4_TYPE="public"
+ return 0
+}
+
+# testing code
+#is_ipv4_valid $1
+#if [[ "$?" == "1" ]]; then
+# echo "\"$1\" is not a valid IPv4 address"
+#else
+# echo "\"$1\" is a valid IPv4 address"
+# is_ipv4_nonroutable $1
+# RESULT=$?
+# if [[ "$RESULT" == "0" ]]; then
+#  echo "\"$1\" is a routable public IPv4 address"
+#  fi
+# if [[ "$RESULT" == "1" ]]; then
+#  echo "\"$1\" is NOT a routable public IPv4 address - $IPV4_TYPE"
+#  fi
+# fi
