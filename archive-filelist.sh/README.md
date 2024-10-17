@@ -22,7 +22,7 @@ For directories, the string "[Directory]" will appear instead of other data for 
 
 ## Why would I use this?
 
-If you have something that has a bunch of files that's intended to be a backup or archive, and you want to have a list of files on this medium handy for future reference, this will easily let you create one.
+If you have something holding a bunch of backup or archive files, and you want to generate a CSV listing of them for future reference or database import, this will easily let you do that.
 
 ## License
 
